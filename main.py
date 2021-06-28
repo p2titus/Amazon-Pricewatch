@@ -1,13 +1,13 @@
-import os
+import pricewatch
 PROD_FILE_NAME = 'products.json'
+
 
 def main():
     link, price = get_product_params()
-    wait_for_price(link, price)
+    pricewatch.pricewatch(link, price)
     print('bought products')
 
 
-# TODO - allow for multiple params at some point
 def get_product_params():
     # we assume the input file is in json
     import json
