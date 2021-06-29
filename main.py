@@ -3,8 +3,8 @@ PROD_FILE_NAME = 'products.json'
 
 
 def main():
-    link, price = get_product_params()
-    pricewatch.pricewatch(link, price)
+    products = get_product_params()
+    pricewatch.pricewatch(products)
     print('bought products')
 
 

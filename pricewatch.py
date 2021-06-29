@@ -21,16 +21,20 @@ HEADERS = {
 
 
 def pricewatch(products):
-    for product in products:
-        __agent(product['link'], product['price'])
+    if products:
+        for product in products:
+            __agent(product['link'], product['price'])
+    else:
+        print("products is empty")
 
 
 async def __agent(link, price):
-    while True:
+    purchased = False
+    while not purchased:
         r = requests.get(link, headers=HEADERS)
         if r.status_code < 500:
-            below_threshold = __watch_price(r)
-            if below_threshold is True:
+            purchased = __watch_price(price, r)
+            if purchased is True:
                 __purchase(link)
         sleep(DELAY)
 
@@ -38,9 +42,11 @@ async def __agent(link, price):
 def __watch_price(price, r):
     product_data = r.text
     e = Extractor.from_yaml_file('amazon-layout.yml')
-    xs = e.extract(r.text)
+    xs = e.extract(product_data)
     return float(xs['price']) < price
 
 
 def __purchase(link):
-    
+    print("success for now!")
+    # TODO - implement
+    return None
