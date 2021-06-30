@@ -58,6 +58,7 @@ def __watch_price(price, r):
     x = xs['price']
     return x is not None and float(x[1:]) <= price
 
+
 '''
 DISCLAIMER TO ANYONE WHO USES THIS CODE
 this will likely not be the most secure method
@@ -65,6 +66,5 @@ if you use this code, I would recommend either thoroughly checking this code OR 
 I take no responsibility for any financial mis-happenings that happen as a result of this code
 '''
 def __purchase(link):
-    print("success for now!")
-    # TODO - implement
-    return None
+    import payment
+    return payment.buy(link)
