@@ -2,6 +2,7 @@ from selectorlib import Extractor
 import requests
 from time import sleep
 DELAY = 24 * 60 * 60  # wait 15 minutes
+from threading import Thread, Barrier
 
 HEADERS = {
     'authority': 'www.amazon.com',
@@ -21,14 +22,22 @@ HEADERS = {
 
 
 def pricewatch(products):
-    if products:
+    '''print(len(products))
+    print(products)'''
+    no_products = len(products)
+    if no_products >= 1:
+        threads = []
+        b = Barrier(no_products)
         for product in products:
-            __agent(product['link'], product['price'])
+            x = products[product]
+            threads.append(Thread(target=__agent(x['link'], x['price'], b)))
+        for t in threads:
+            t.start()
     else:
-        print("products is empty")
+        print("no products specified - terminating")
 
 
-async def __agent(link, price):
+def __agent(link, price, b: Barrier):
     purchased = False
     while not purchased:
         r = requests.get(link, headers=HEADERS)
@@ -36,14 +45,18 @@ async def __agent(link, price):
             purchased = __watch_price(price, r)
             if purchased is True:
                 __purchase(link)
-        sleep(DELAY)
+        if not purchased:
+            sleep(DELAY)
+    b.wait()
 
 
 def __watch_price(price, r):
     product_data = r.text
     e = Extractor.from_yaml_file('amazon-layout.yml')
     xs = e.extract(product_data)
-    return float(xs['price']) < price
+    print(xs)
+    x = xs['price']
+    return x is not None and float(x[1:]) <= price
 
 
 def __purchase(link):
