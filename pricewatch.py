@@ -4,6 +4,12 @@ from time import sleep
 DELAY = 24 * 60 * 60  # wait 15 minutes
 from threading import Thread, Barrier
 
+EMAIL_PROVIDER = "example"
+EMAIL_ADDR = f"example@{EMAIL_PROVIDER}.com"
+EMAIL_PORT = 465
+EMAIL_PWD = "test password"
+EMAIL_RECV = "example2@example.com"
+
 HEADERS = {
     'authority': 'www.amazon.com',
     'pragma': 'no-cache',
@@ -30,21 +36,21 @@ def pricewatch(products):
         b = Barrier(no_products)
         for product in products:
             x = products[product]
-            threads.append(Thread(target=__agent(x['link'], x['price'], b)))
+            threads.append(Thread(target=__agent(product, x['link'], x['price'], b)))
         for t in threads:
             t.start()
     else:
         print("no products specified - terminating")
 
 
-def __agent(link, price, b: Barrier):
+def __agent(name, link, price, b: Barrier):
     purchased = False
     while not purchased:
         r = requests.get(link, headers=HEADERS)
         if r.status_code < 500:
-            purchased = __watch_price(price, r)
-            if purchased is True:
-                __purchase(link)
+            emailed = __watch_price(price, r)
+            if emailed is True:
+                __email(name, link, price)
         if not purchased:
             sleep(DELAY)
     b.wait()
@@ -59,12 +65,20 @@ def __watch_price(price, r):
     return x is not None and float(x[1:]) <= price
 
 
-'''
-DISCLAIMER TO ANYONE WHO USES THIS CODE
-this will likely not be the most secure method
-if you use this code, I would recommend either thoroughly checking this code OR rewriting from scratch yourself
-I take no responsibility for any financial mis-happenings that happen as a result of this code
-'''
-def __purchase(link):
-    import payment
-    return payment.buy(link)
+def __email(name, link, price):
+    import smtplib, ssl
+
+    mail = f'''
+    Hello!
+    
+    The price of {name} has dropped below your specified price of {price}!
+    You can now purchase it at {link}!
+    
+    Kind regards,
+    Pricewatch Bot
+    [This is an automated email - please do not respond as it will not be read]
+    '''
+    context = ssl.create_default_context()
+    with smtplib.SMTP_SSL(f"smtp.{EMAIL_PROVIDER}.com", EMAIL_PORT, context=context) as s:
+        s.login(EMAIL_ADDR, EMAIL_PWD)
+        s.sendmail(EMAIL_ADDR, EMAIL_RECV, mail)
